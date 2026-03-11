@@ -54,18 +54,18 @@ jobs:
           VERSION_TAG=${{ inputs.release-tag }}
           VERSION_TAG=${VERSION_TAG#v}                              # remove the 'v' prefix
           IFS='.' read -ra VERSION_PARTS <<< "$VERSION_TAG"         # split into array
-          VERSION_CODE=$(printf "%1d%02d%03d" "${VERSION_PARTS[0]}" "${VERSION_PARTS[1]}" "${VERSION_PARTS[2]}")
+          VERSION_CODE=$(printf "%1d%02d%03d" "${VERSION_PARTS}" "${VERSION_PARTS}" "${VERSION_PARTS}")
           
-          echo "versonName=$VERSION_TAG" >> $GITHUB_OUTPUT          # "1.2.3"
-          echo "versonCode=$VERSION_CODE" >> $GITHUB_OUTPUT         # "102003"
+          echo "versionName=$VERSION_TAG" >> $GITHUB_OUTPUT         # "1.2.3"
+          echo "versionCode=$VERSION_CODE" >> $GITHUB_OUTPUT        # "102003"
       
       # Re-write version in build.gradle.kts
       - name: Re-write version
         uses: Devofure/advance-android-version-actions@v1.5
         with:
           gradlePath: build.gradle.kts
-          versionCode: ${{ steps.process-version.outputs.versonCode }}
-          versionName: ${{ steps.process-version.outputs.versonName }}
+          versionCode: ${{ steps.process-version.outputs.versionCode }}
+          versionName: ${{ steps.process-version.outputs.versionName }}
       
       # If any change found, commit it and push
       - name: Commit and push if changes
@@ -73,8 +73,8 @@ jobs:
           changes=$(git diff --name-only origin/main | wc -l)
           if [ $changes -gt 0 ]
           then
-            newVersionName=${{ steps.process-version.outputs.versonName }}
-            newVersionCode=${{ steps.process-version.outputs.versonCode }}
+            newVersionName=${{ steps.process-version.outputs.versionName }}
+            newVersionCode=${{ steps.process-version.outputs.versionCode }}
             git config --global user.name 'GitHub Action'
             git config --global user.email 'action@github.com'
             git add build.gradle.kts
@@ -105,7 +105,7 @@ jobs:
 
       - name: Release Build
         if: success()
-        run: ./gradlew --no-daemon app:assembleMetaRelease
+        run: ./gradlew --no-daemon app:assembleMetaRelease -Pandroid.injected.build.abi=arm64-v8a
 
       - name: Tag Repo
         uses: richardsimko/update-tag@v1
@@ -129,5 +129,6 @@ jobs:
             {
               "ignore_labels": [
                 "Update"
-              ],
+              ]
             }
+
